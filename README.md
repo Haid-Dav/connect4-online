@@ -15,7 +15,18 @@ Auf einem zweiten Gerät im selben WLAN die LAN-Adresse des Rechners statt local
 
 ## Starten
 
-Voraussetzungen: JDK 21 oder neuer (getestet mit 24), Maven 3.6.3+, Node.js 22.12+ und npm oder pnpm.
+Voraussetzungen: Git, JDK 21 oder 24 (getestet mit 24), Maven 3.6.3+, Node.js 22.12+ und npm oder pnpm. Für diesen Prototyp wird keine Datenbank benötigt.
+
+Repository herunterladen und Frontend-Abhängigkeiten installieren:
+
+```sh
+git clone https://github.com/Haid-Dav/connect4-online.git
+cd connect4-online/frontend
+npm install
+cd ..
+```
+
+Mit `java -version`, `mvn -version` und `node --version` kannst du die Voraussetzungen prüfen. `JAVA_HOME` muss auf dein JDK zeigen, falls Maven Java nicht findet.
 
 Einmalig im Ordner `frontend`:
 
@@ -25,7 +36,7 @@ npm install
 
 Alternativ `pnpm install`; ein pnpm-Lockfile liegt bei. Dann unter Windows `./Start-Connect4.ps1` aus PowerShell starten. Der Starter findet Maven im PATH oder im vorhandenen Maven-Wrapper-Cache. Die Server laufen bis zum Beenden mit Strg+C.
 
-Manueller Start in zwei Terminals:
+Manueller Start in zwei Terminals, jeweils ausgehend vom Projektstamm `connect4-online`:
 
 ```sh
 cd backend
@@ -66,6 +77,23 @@ Sinnvolle nächste Schritte: PostgreSQL und abgeschlossene Partien speichern; Be
 
 ## Prüfen
 
+### Manuell in zwei Browser-Tabs
+
+1. Beide Server starten und warten, bis Vite die URL ausgibt und Spring Boot `Started Application` meldet.
+2. `http://localhost:5174` öffnen. Oben muss **Server verbunden** stehen.
+3. Als **Alice** einen privaten Raum erstellen. Den angezeigten Einladungslink in einem zweiten Tab öffnen.
+4. Im zweiten Tab **Bob** eingeben und **Beitreten** wählen. Alice spielt Koralle und beginnt; Bob spielt Gold.
+5. Für einen einfachen Sieg abwechselnd diese Spalten anklicken: Alice **1**, Bob **2**, Alice **1**, Bob **2**, Alice **1**, Bob **2**, Alice **1**.
+6. Erwartung: Beide Tabs zeigen dieselben sieben Steine und **Alice gewinnt!**. Die vier korallenfarbenen Steine sind markiert. Weitere Züge sind gesperrt.
+7. In beiden Tabs die Revanche bestätigen. Erwartung: Das Brett ist leer; Bob spielt jetzt Koralle und beginnt.
+8. Einen Tab schließen. Erwartung: Im anderen Tab erscheint die Meldung, dass der Mitspieler den Raum verlassen hat.
+
+Zusätzlich prüfen: Ein dritter Tab darf einem vollen Raum nicht beitreten; ein erfundener Raumcode zeigt eine Fehlermeldung; der wartende Spieler kann keinen Stein setzen.
+
+### Automatisierte Tests
+
+Jeden der folgenden Befehlsblöcke aus dem Projektstamm starten. Für die Regeltests und den Frontend-Build müssen die Server nicht laufen.
+
 ```sh
 cd backend
 mvn test
@@ -83,5 +111,21 @@ node tests/multiplayer.mjs
 ```
 
 Der Integrationstest verwendet eigene Testräume und prüft Beitritt, Kapazität, falsche Zugreihenfolge, ungültige Eingaben, Synchronisierung, Sieg, Revanche und Aufräumen bei Disconnect. `WS_URL` kann einen anderen Test-Endpunkt festlegen.
+
+Erwartete Ergebnisse: `mvn test` meldet **7 Tests, 0 Fehler**, der Frontend-Build endet erfolgreich und der Integrationstest gibt eine Zeile beginnend mit **PASS:** aus.
+
+## Häufige Startprobleme
+
+| Problem | Lösung |
+| --- | --- |
+| `mvn` oder `node` wird nicht gefunden | Maven bzw. Node.js installieren, zum PATH hinzufügen und ein neues Terminal öffnen. |
+| `Port 8081/5174 is already in use` | Prüfen, ob Connect4 schon läuft. Falls ja, die vorhandene Seite öffnen. Andernfalls den betreffenden eigenen Entwicklungsserver beenden. |
+| Webseite lädt, aber keine Serververbindung | Backend-Terminal auf Fehler prüfen; der Server muss auf Port 8081 laufen. |
+| `npm run dev` findet Vite nicht | Im Ordner `frontend` zuerst `npm install` ausführen. |
+| PowerShell lässt den Starter nicht ausführen | Den oben beschriebenen manuellen Start in zwei Terminals verwenden. |
+| Handy erreicht die Seite nicht | Beide Geräte ins gleiche WLAN bringen und die von Vite angezeigte Network-Adresse verwenden. `localhost` auf dem Handy bezeichnet das Handy selbst. |
+| Integrationstest meldet einen Timeout | Backend und Frontend starten und zuerst im Browser auf **Server verbunden** prüfen. |
+
+Die Entwicklungsserver lassen sich in ihren Terminals mit **Strg+C** beenden. `npm run build` erstellt nur das Frontend-Bundle; der Befehl startet keine Server und veröffentlicht die App nicht.
 
 Technische Referenz: https://docs.spring.io/spring-boot/system-requirements.html
